@@ -19,7 +19,6 @@ class HeteroGraphClassificationDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, if_easy_neg=1):
         self.if_easy_neg = if_easy_neg
         super(HeteroGraphClassificationDataset, self).__init__(root, transform, pre_transform)
-        # 动态获取数据集长度
         self.dataset_length = len([f for f in os.listdir(self.processed_dir)
                                    if f.startswith('graph_') and f.endswith('.pt')])
         if self.dataset_length == 0:
@@ -137,7 +136,6 @@ def main():
     print(f"total_params: {total_params}")
     print(f"trainable_params: {trainable_params}")
 
-    # 正常训练 加载数据集
     dataset = HeteroGraphClassificationDataset(root=dataset_store_path)
     print("dataset:", dataset)
     print("num_samples:", len(dataset))
@@ -169,7 +167,7 @@ def main():
         start_time = time.time()
         pbar = tqdm(train_loader, desc=f'Epoch {epoch}', unit='batch', dynamic_ncols=True, leave=False)
         for data in pbar:
-            data = data.to(device)  # 确保每个 batch 的数据都转移到设备上
+            data = data.to(device)  
             loss = train(model, data, optimizer, device)
             epoch_loss += loss
             # 更新进度条
