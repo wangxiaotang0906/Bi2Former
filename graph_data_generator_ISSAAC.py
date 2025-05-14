@@ -198,7 +198,6 @@ class HeteroGraphClassificationDataset(InMemoryDataset):
 
     @property
     def processed_file_names(self):
-        # 使用图的索引作为文件名（如：graph_0.pt, graph_1.pt...）
         return [f'graph_{i}.pt' for i in range(total_cells * 2)]
 
     def download(self):
