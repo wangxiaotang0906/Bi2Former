@@ -170,9 +170,8 @@ def main():
             data = data.to(device)  
             loss = train(model, data, optimizer, device)
             epoch_loss += loss
-            # 更新进度条
             pbar.set_postfix(loss=loss)
-        pbar.close()  # 手动关闭进度条，避免"0%"行
+        pbar.close() 
     
         avg_loss = epoch_loss / len(train_loader)
         epoch_time = time.time() - start_time
