@@ -3,14 +3,14 @@
 > This repository is still on progress.
 
 ## Graph Construction
-<img src="Bi2Former/abg.jpg">
+<img src="figs/abg.png">
 
 Framework of Attribute Bipartite Graphs Construction. 
 
 We used four datasets, the original files of the datasets are in “Bi2Former/bio_datasets/{dataset_name}”, and the code for generating the corresponding graph datasets are in “Bi2Former/graph_data_generator_{dataset_name}.py”.
 
 ## Bi2Former
-<img src="Bi2Former/bi2former.jpg">
+<img src="figs/bi2former.png">
 
 Framework of Bi2Former. 
 
