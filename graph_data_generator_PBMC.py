@@ -13,7 +13,7 @@ import scipy.sparse
 
 select_cell_type = False # select partical cell types
 if_easy_neg = 1
-neg_easy_ratio = 1
+neg_pos_ = 1
 selected_cell_type = []
 dataset_store_path = './bio_graph_datasets/10X_PBMC'
 
@@ -94,7 +94,7 @@ grouped = all_cell_df.groupby('cell_type')
 if if_easy_neg == 1:
     all_cells = all_cell_df.index.tolist()
     all_types = all_cell_df['cell_type'].tolist()
-    total_easy_negative_pairs = total_cells * neg_easy_ratio  
+    total_easy_negative_pairs = total_cells * neg_pos_ratio  
     easy_negative_pairs = []
 
     while len(easy_negative_pairs) < total_easy_negative_pairs:
@@ -106,7 +106,7 @@ if if_easy_neg == 1:
 
 # hard_neg
 if if_easy_neg == 0:
-    total_hard_negative_pairs = total_cells * neg_easy_ratio
+    total_hard_negative_pairs = total_cells * neg_pos_ratio
     hard_negative_pairs = []
     cell_type_proportions = grouped.size() / total_cells
     cell_type_negative_counts = (cell_type_proportions * total_hard_negative_pairs).astype(int)
