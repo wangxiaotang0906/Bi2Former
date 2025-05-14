@@ -12,31 +12,8 @@ import matplotlib.pyplot as plt
 from torch_geometric.data import InMemoryDataset
 import os
 
-dataset_store_path = 'bio_graph_datasets/10X_PBMC_CD4'
-best_model_path = "checkpoint/10XPBMC_dataset_check_point_binary_08.pth"
-
-# class HeteroGraphClassificationDataset(InMemoryDataset):
-#     def __init__(self, root, transform=None, pre_transform=None, if_easy_neg=1):
-#         self.if_easy_neg = if_easy_neg
-#         super(HeteroGraphClassificationDataset, self).__init__(root, transform, pre_transform)
-#         # 在第一次加载时，处理数据
-#         if os.path.exists(self.processed_paths[0]):
-#             print(f"文件 {self.processed_paths[0]} 已经存在，正在加载数据集")
-#             self.data, self.slices = torch.load(self.processed_paths[0])
-#         else:
-#             print("Processed data not found. Please ensure the dataset is generated correctly.")
-#             raise FileNotFoundError("Required processed data file is missing.")
-#
-#     @property
-#     def raw_file_names(self):
-#         return []
-#
-#     @property
-#     def processed_file_names(self):
-#         return ['ISSAAC_graph.pt']
-#
-#     def download(self):
-#         pass
+dataset_store_path = 'bio_graph_datasets/10X_PBMC'
+best_model_path = "checkpoint/10XPBMC_check_point_binary_08.pth"
 
 class HeteroGraphClassificationDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, if_easy_neg=1):
@@ -92,7 +69,7 @@ def train(model, data, optimizer, device):
     data = data.to(device)
     optimizer.zero_grad()
     out = model(data, device)
-    loss = F.cross_entropy(out, data.y)  # 交叉熵损失
+    loss = F.cross_entropy(out, data.y) 
     loss.backward()
     optimizer.step()
 
@@ -153,118 +130,101 @@ def main():
 
     model = RNA_ATAC_Pairing(in_channels_dict, id_embedding_dims=256, hidden_channels=128, out_channels=2, layer_num=1, multihead=True, num_heads=1,
                              dropout=0.1).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-6) #128 128 0.3 5e-5 1e-6； 256 128 0.1 3e-5 1e-6
+    optimizer = optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-6)
     print("model:", model)
-    # 统计参数量
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"总参数量: {total_params}")
-    print(f"可训练参数量: {trainable_params}")
+    print(f"total_params: {total_params}")
+    print(f"trainable_params: {trainable_params}")
 
     # 正常训练 加载数据集
     dataset = HeteroGraphClassificationDataset(root=dataset_store_path)
     print("dataset:", dataset)
     print("num_samples:", len(dataset))
     print("dataset samples:", dataset[0])
-    # num_samples = len(dataset)
-    # indices = torch.randperm(num_samples) # 打乱索引序列
-    # shuffled_dataset = dataset[indices]   # 重新排序数据
+    num_samples = len(dataset)
+    indices = torch.randperm(num_samples)
+    shuffled_dataset = dataset[indices]   
 
-    # train_size = int(0.8 * len(dataset))
-    # val_size = int(0.1 * len(dataset))
-    # test_size = len(dataset) - train_size - val_size
-    # train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset,
-    #                                                                          [train_size, val_size, test_size])
-    # train_loader = DataLoader(train_dataset, batch_size=1, num_workers=4, shuffle=True)
-    # val_loader = DataLoader(val_dataset, batch_size=1, num_workers=4, shuffle=False)
-    # test_loader = DataLoader(test_dataset, batch_size=1, num_workers=4, shuffle=False)
-
-    # case study 专用加载数据集
-    # test_loader = DataLoader(dataset, batch_size=1, num_workers=4, shuffle=False)
-
-    # 复现性实验 专用加载数据集
-    # dataset = HeteroGraphClassificationDataset(root='./bio_graph_datasets/ISSAAC_graph_R7_group_1')
-    # train_size = int(0.8 * len(dataset))
-    # val_size = int(0.2 * len(dataset))
-    # train_dataset, val_dataset = torch.utils.data.random_split(dataset,
-    #                                                                  [train_size, val_size])
-    #val_dataset = HeteroGraphClassificationDataset(root='./bio_graph_datasets/ISSAAC_graph_R17_valid')
-    #test_dataset = HeteroGraphClassificationDataset(root='./bio_graph_datasets/ISSAAC_graph_R17_valid')
-    # train_loader = DataLoader(train_dataset, batch_size=1, num_workers=4, shuffle=True)
-    # val_loader = DataLoader(val_dataset, batch_size=1, num_workers=4, shuffle=False)
-    test_loader = DataLoader(dataset, batch_size=1, num_workers=4, shuffle=False)
+    train_size = int(0.8 * len(dataset))
+    val_size = int(0.1 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset,
+                                                                             [train_size, val_size, test_size])
+    train_loader = DataLoader(train_dataset, batch_size=1, num_workers=4, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, num_workers=4, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=1, num_workers=4, shuffle=False)
 
     train_losses = []
     val_accuracies = []
     best_val_accuracy = 0
 
-    # # 继续训练
+    # Continue training from break
     # model.load_state_dict(torch.load(best_model_path))
     # model.to(device)
 
-    # 训练
-    # for epoch in range(1, 30):
-    #     epoch_loss = 0
-    #     start_time = time.time()
-    #     pbar = tqdm(train_loader, desc=f'Epoch {epoch}', unit='batch', dynamic_ncols=True, leave=False)
-    #     for data in pbar:
-    #         data = data.to(device)  # 确保每个 batch 的数据都转移到设备上
-    #         loss = train(model, data, optimizer, device)
-    #         epoch_loss += loss
-    #         # 更新进度条
-    #         pbar.set_postfix(loss=loss)
-    #     pbar.close()  # 手动关闭进度条，避免"0%"行
-    #
-    #     avg_loss = epoch_loss / len(train_loader)
-    #     epoch_time = time.time() - start_time
-    #
-    #     # 验证
-    #     val_accuracy, val_P_Precision, val_N_Precision, val_P_Recall, val_N_Recall = evaluate(model, val_loader, device)
-    #
-    #     tqdm.write(f'Epoch {epoch}, Time: {epoch_time:.2f}s, Loss: {avg_loss:.8f}, '
-    #                f'Validation Accuracy: {val_accuracy:.4f}, '
-    #                f'Validation P Precision: {val_P_Precision:.4f}, '
-    #                f'Validation N Precision: {val_N_Precision:.4f}, '
-    #                f'Validation P Recall: {val_P_Recall:.4f}, '
-    #                f'Validation N Recall: {val_N_Recall:.4f}')
-    #     # 保存
-    #     if val_accuracy > best_val_accuracy:
-    #         best_val_accuracy = val_accuracy
-    #         torch.save(model.state_dict(), best_model_path)
-    #         print(f"Saved best model of Epoch {epoch} with validation accuracy: {val_accuracy:.4f}")
-    #
-    #     train_losses.append(avg_loss)
-    #     val_accuracies.append(val_accuracy)
-    #
-    #     time.sleep(1)
-    #
-    # # 绘制损失和准确率曲线
-    # plt.figure(figsize=(12, 5))
-    #
-    # # 绘制训练损失
-    # plt.subplot(1, 2, 1)
-    # plt.plot(range(1, len(train_losses) + 1), train_losses, label='Training Loss', color='blue')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
-    # plt.title('Training Loss per Epoch')
-    # plt.grid(True)
-    #
-    # # 绘制验证准确率
-    # plt.subplot(1, 2, 2)
-    # plt.plot(range(1, len(val_accuracies) + 1), val_accuracies, label='Validation Accuracy', color='green')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.title('Validation Accuracy per Epoch')
-    # plt.grid(True)
-    #
-    # plt.tight_layout()
-    # plt.show()
+    # Training
+    for epoch in range(1, 30):
+        epoch_loss = 0
+        start_time = time.time()
+        pbar = tqdm(train_loader, desc=f'Epoch {epoch}', unit='batch', dynamic_ncols=True, leave=False)
+        for data in pbar:
+            data = data.to(device)  # 确保每个 batch 的数据都转移到设备上
+            loss = train(model, data, optimizer, device)
+            epoch_loss += loss
+            # 更新进度条
+            pbar.set_postfix(loss=loss)
+        pbar.close()  # 手动关闭进度条，避免"0%"行
+    
+        avg_loss = epoch_loss / len(train_loader)
+        epoch_time = time.time() - start_time
+    
+        # Validation 
+        val_accuracy, val_P_Precision, val_N_Precision, val_P_Recall, val_N_Recall = evaluate(model, val_loader, device)
+    
+        tqdm.write(f'Epoch {epoch}, Time: {epoch_time:.2f}s, Loss: {avg_loss:.8f}, '
+                   f'Validation Accuracy: {val_accuracy:.4f}, '
+                   f'Validation P Precision: {val_P_Precision:.4f}, '
+                   f'Validation N Precision: {val_N_Precision:.4f}, '
+                   f'Validation P Recall: {val_P_Recall:.4f}, '
+                   f'Validation N Recall: {val_N_Recall:.4f}')
+        
+        # Save best model
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            torch.save(model.state_dict(), best_model_path)
+            print(f"Saved best model of Epoch {epoch} with validation accuracy: {val_accuracy:.4f}")
+    
+        train_losses.append(avg_loss)
+        val_accuracies.append(val_accuracy)
+    
+        time.sleep(1)
+    
 
-    # 加载最佳模型
+    plt.figure(figsize=(12, 5))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(range(1, len(train_losses) + 1), train_losses, label='Training Loss', color='blue')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss per Epoch')
+    plt.grid(True)
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(range(1, len(val_accuracies) + 1), val_accuracies, label='Validation Accuracy', color='green')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Validation Accuracy per Epoch')
+    plt.grid(True)
+    
+    plt.tight_layout()
+    plt.show()
+
+    # Load best model
     model.load_state_dict(torch.load(best_model_path))
     model.to(device)
 
-    # 评估
+    # Test
     test_accuracy, test_P_Precision, test_N_Precision, test_P_Recall, test_N_Recall = evaluate(model, test_loader,
                                                                                                device)
     print(f'Test Accuracy: {test_accuracy:.4f}')
