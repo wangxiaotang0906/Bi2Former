@@ -1,6 +1,6 @@
 # Learning Crossmodal Interaction Patterns via Attributed Bipartite Graphs for Single-Cell Omics
 
-> This repository is still on progress.
+> News: This work has been accepted as a poster by **NeurIPS2025.**
 
 ## Graph Construction
 <img src="figs/abg.png">
