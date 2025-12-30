@@ -87,6 +87,7 @@ class MultiHeadCrossAttentionConv(MessagePassing):
         # RNA->ATAC attention
         rna_query = self.rna_query(x_rna).view(-1, self.num_heads, self.head_dim)  # [num_rna_nodes, num_heads, head_dim]
         atac_key = self.atac_key(x_atac).view(-1, self.num_heads, self.head_dim)  # [num_atac_nodes, num_heads, head_dim]
+        rna_value = self.rna_value(x_rna).view(-1, self.num_heads, self.head_dim) # [num_rna_nodes, num_heads, head_dim]
         atac_value = self.atac_value(x_atac).view(-1, self.num_heads, self.head_dim)  # [num_atac_nodes, num_heads, head_dim]
         rna_atac_attention = torch.bmm(
             rna_query.permute(1, 0, 2).reshape(self.num_heads, -1, self.head_dim),
@@ -230,3 +231,4 @@ class RNA_ATAC_Pairing(nn.Module):
         x = self.fc3(x)
 
         return x
+
